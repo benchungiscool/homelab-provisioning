@@ -1,0 +1,71 @@
+name: Provision
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (dry run)
+    runs-on: self-hosted-fellas
+    if: github.event_name == 'pull_request'
+    container:
+      image: python:3.12-slim
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: apt-get update -q && apt-get install -y -q openssh-client
+
+      - name: Install Python dependencies
+        run: pip install -q -r requirements.txt
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Set up vault password
+        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
+
+      - name: Lint
+        run: ansible-lint provision.yml
+
+      - name: Dry run
+        run: ansible-playbook provision.yml --vault-password-file .vault-password --check
+
+  deploy:
+    name: Deploy
+    runs-on: self-hosted-fellas
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    container:
+      image: python:3.12-slim
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: apt-get update -q && apt-get install -y -q openssh-client
+
+      - name: Install Python dependencies
+        run: pip install -q -r requirements.txt
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Set up vault password
+        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
+
+      - name: Deploy
+        run: ansible-playbook provision.yml --vault-password-file .vault-password
