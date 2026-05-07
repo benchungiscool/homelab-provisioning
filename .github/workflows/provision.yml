@@ -11,7 +11,7 @@ permissions:
 jobs:
   validate:
     name: Validate (dry run)
-    runs-on: self-hosted-fellas
+    runs-on: self-hosted-benchungiscool
     if: github.event_name == 'pull_request'
     container:
       image: python:3.12-slim
@@ -43,7 +43,7 @@ jobs:
 
   deploy:
     name: Deploy
-    runs-on: self-hosted-fellas
+    runs-on: self-hosted-benchungiscool
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     container:
       image: python:3.12-slim
