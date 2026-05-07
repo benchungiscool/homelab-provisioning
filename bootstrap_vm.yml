@@ -1,0 +1,14 @@
+---
+- name: Bootstrap VM
+  hosts: new_vm
+  become: true
+
+  tasks:
+    - name: Run bootstrap tasks
+      ansible.builtin.import_tasks: tasks/bootstrap.yml
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

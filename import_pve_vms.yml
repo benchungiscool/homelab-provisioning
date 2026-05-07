@@ -1,0 +1,55 @@
+---
+# List VMs on Proxmox that are not tracked in config/vms.yml, and print
+# ready-to-paste entries you can add to config/vms.yml.
+#
+# Usage:
+#   ansible-playbook import_pve_vms.yml --ask-vault-pass
+
+- name: Find untracked VMs on Proxmox
+  hosts: pve
+  gather_facts: false
+
+  tasks:
+    - name: Create reconcile working directory
+      ansible.builtin.file:
+        path: /tmp/homelab-reconcile
+        state: directory
+        mode: "0755"
+
+    - name: Upload reconcile script and config
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "0755"
+      loop:
+        - { src: scripts/reconcile-vms.py, dest: /tmp/homelab-reconcile/reconcile-vms.py }
+        - { src: config/vms.yml, dest: /tmp/homelab-reconcile/vms.yml }
+
+    - name: List untracked VMs
+      ansible.builtin.command: >
+        python3 /tmp/homelab-reconcile/reconcile-vms.py
+        /tmp/homelab-reconcile/vms.yml --list-untracked
+      register: untracked_vms_raw
+      changed_when: false
+
+    - name: All VMs are tracked
+      ansible.builtin.debug:
+        msg: "All VMs on Proxmox are already tracked in config/vms.yml"
+      when: (untracked_vms_raw.stdout | from_json) | length == 0
+
+    - name: Show config/vms.yml entries to add
+      ansible.builtin.debug:
+        msg: |
+          The following VMs are not in config/vms.yml. Add the entries you want to track:
+
+          {% for vm in untracked_vms_raw.stdout | from_json %}
+            - name: {{ vm.name }}
+              vmid: {{ vm.vmid }}
+              cores: {{ vm.cores }}
+              memory: {{ vm.memory }}
+          {% if vm.disk %}
+              disk: {{ vm.disk }}
+          {% endif %}
+
+          {% endfor %}
+      when: (untracked_vms_raw.stdout | from_json) | length > 0

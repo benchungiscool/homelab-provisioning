@@ -1,0 +1,26 @@
+#cloud-config
+
+disable_root: true
+
+users:
+  - name: ben
+    groups: sudo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: false
+    ssh_authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCtso8ngHBgBDbQWB1KpJ5q9+arLTfbqRKoeNiQN95yJ9VWjlAAXiJwHOQ6mybhHoBDBDwUVkpD2m/7L/WpyfZNjL7bohTt208ygEt0N/4GGz+tllWrzt36NlvBgAddcNggBfJKVEq0Zh6Dh6tqY3g5JlT73SxrgBIj24c+QM1zGALBnaAVWPTlbCZHmRdUUnXroI7mKr07i/30u1Y/cj9Bzp8gO4x3KmgNi/hZ4cgTHHUouegebQs+522qe7PpDOwo2IiUzbsD2bZkFP45we/Z31uRlV/aY6p/AxCeCl/OXwQbKaRvu1kty9/i1b9v3qnn7q54F0NzTCXs9H0WZR7ie7w6HAK7osOtdiGQgbUICDwhwp66WkR3Clxk56SljLk9JALsehpP72fuV3ioU6Q4giECGQ4W1vpYXpwY08/ES57RprmmEhWzxDgjGAy6Hh5gQJfX4eeMWsMuZQ733yBVcz52+L+uNfO7eZZufhCDJ86Y5DCsv8sKWH4s0UBM3LM= ben@benchung.dev"
+
+ssh_pwauth: false
+
+packages:
+  - python3
+  - sudo
+  - qemu-guest-agent
+
+runcmd:
+  - rm -f /etc/ssh/ssh_host_*
+  - ssh-keygen -A
+  - sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - systemctl restart ssh
+  - systemctl enable --now qemu-guest-agent

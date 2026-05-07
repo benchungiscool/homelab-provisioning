@@ -1,0 +1,65 @@
+
+PLAY [Reconcile VMs on Proxmox] ************************************************
+
+TASK [Create reconcile working directory] **************************************
+ok: [pve]
+
+TASK [Upload reconcile script and config] **************************************
+ok: [pve] => (item={'src': 'scripts/reconcile-vms.py', 'dest': '/tmp/homelab-reconcile/reconcile-vms.py'})
+ok: [pve] => (item={'src': 'config/vms.yml', 'dest': '/tmp/homelab-reconcile/vms.yml'})
+
+TASK [Reconcile VMs] ***********************************************************
+changed: [pve]
+
+TASK [Reconcile output] ********************************************************
+ok: [pve] => {
+    "msg": [
+        "",
+        "[test-vm-1]",
+        "  Creating VM 100 at 192.168.100.4...",
+        "  Started (add 'vmid: 100' to vms.yml to enable renames)"
+    ]
+}
+
+TASK [List managed VMs] ********************************************************
+ok: [pve]
+
+TASK [Register managed VMs for bootstrapping] **********************************
+ok: [pve] => (item={'name': 'test-vm-1', 'vmid': 100, 'ip': '192.168.100.4', 'role': None})
+
+PLAY [Bootstrap managed VMs] ***************************************************
+
+TASK [Wait for SSH] ************************************************************
+ok: [192.168.100.4]
+
+TASK [Gather facts] ************************************************************
+ok: [192.168.100.4]
+
+TASK [Create ben user] *********************************************************
+changed: [192.168.100.4]
+
+TASK [Add SSH key for ben] *****************************************************
+ok: [192.168.100.4]
+
+TASK [Deploy bashrc] ***********************************************************
+changed: [192.168.100.4]
+
+TASK [Ensure .bash_profile sources .bashrc] ************************************
+changed: [192.168.100.4]
+
+TASK [Harden sshd - disable root login and enforce key-only auth] **************
+changed: [192.168.100.4] => (item={'regexp': '^#?PermitRootLogin', 'line': 'PermitRootLogin no'})
+ok: [192.168.100.4] => (item={'regexp': '^#?PasswordAuthentication', 'line': 'PasswordAuthentication no'})
+changed: [192.168.100.4] => (item={'regexp': '^#?PubkeyAuthentication', 'line': 'PubkeyAuthentication yes'})
+changed: [192.168.100.4] => (item={'regexp': '^#?PermitEmptyPasswords', 'line': 'PermitEmptyPasswords no'})
+
+TASK [Set BEN-XXXXXXXX hostname if not already set] ****************************
+changed: [192.168.100.4]
+
+RUNNING HANDLER [Restart sshd] *************************************************
+changed: [192.168.100.4]
+
+PLAY RECAP *********************************************************************
+192.168.100.4              : ok=9    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+pve                        : ok=6    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

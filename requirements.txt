@@ -1,0 +1,5 @@
+# Python dependencies for the Ansible control machine and CI
+# Install with: pip install -r requirements.txt
+ansible
+ansible-lint
+passlib

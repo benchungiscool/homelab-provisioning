@@ -1,0 +1,18 @@
+vms:
+  - name: k8s-master
+    vmid: 101
+    cores: 4
+    memory: 4096
+    disk: 40G
+
+  - name: k8s-worker-1
+    vmid: 104
+    cores: 4
+    memory: 8192
+    disk: 40G
+
+  - name: k8s-worker-2
+    vmid: 100
+    cores: 4
+    memory: 8192
+    disk: 40G

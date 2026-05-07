@@ -1,0 +1,49 @@
+- name: Create ben user
+  ansible.builtin.user:
+    name: ben
+    password: "{{ vault_ben_password | password_hash('sha512') }}"
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+
+- name: Add SSH key for ben
+  ansible.posix.authorized_key:
+    user: ben
+    key: "{{ ben_ssh_public_key }}"
+    state: present
+
+- name: Deploy bashrc
+  ansible.builtin.copy:
+    src: files/bashrc
+    dest: /home/ben/.bashrc
+    owner: ben
+    group: ben
+    mode: "0644"
+
+- name: Ensure .bash_profile sources .bashrc
+  ansible.builtin.lineinfile:
+    path: /home/ben/.bash_profile
+    line: "[[ -f ~/.bashrc ]] && source ~/.bashrc"
+    create: true
+    owner: ben
+    group: ben
+    mode: "0644"
+
+- name: Harden sshd - disable root login and enforce key-only auth
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  loop:
+    - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?PermitEmptyPasswords', line: 'PermitEmptyPasswords no' }
+  notify: Restart sshd
+
+- name: Set BEN-XXXXXXXX hostname if not already set
+  ansible.builtin.hostname:
+    name: "BEN-{{ lookup('password', '/dev/null chars=ABCDEFGHIJKLMNOPQRSTUVWXYZ length=8') }}"
+  when: ansible_facts['hostname'] is not match('^BEN-[A-Z]{8}$')
