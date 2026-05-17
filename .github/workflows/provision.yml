@@ -33,7 +33,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Set up vault password
-        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
+        run: printf '%s' "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
 
       - name: Lint
         run: ansible-lint provision.yml
@@ -65,7 +65,7 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
 
       - name: Set up vault password
-        run: echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
+        run: printf '%s' "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault-password
 
       - name: Deploy
         run: ansible-playbook provision.yml --vault-password-file .vault-password
